@@ -2,6 +2,7 @@ import argparse
 import pathlib
 import time
 from general_motion_retargeting import GeneralMotionRetargeting as GMR
+from general_motion_retargeting import IK_CONFIG_DICT
 from general_motion_retargeting import RobotMotionViewer
 from rich import print
 from tqdm import tqdm
@@ -41,7 +42,7 @@ if __name__ == "__main__":
     
     parser.add_argument(
         "--robot",
-        choices=["unitree_g1", "booster_t1", "stanford_toddy", "fourier_n1", "engineai_pm01"],
+        choices=sorted(IK_CONFIG_DICT["fbx_offline"]),
         default="unitree_g1",
     )
         

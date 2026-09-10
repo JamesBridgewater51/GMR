@@ -15,6 +15,7 @@ from rich import print
 
 from general_motion_retargeting.utils.xsens_vendor.xsens_to_gmr_adapter import XsensToGMR
 from general_motion_retargeting import GeneralMotionRetargeting as GMR
+from general_motion_retargeting import IK_CONFIG_DICT
 from general_motion_retargeting import RobotMotionViewer
 
 # Global flag for graceful shutdown
@@ -46,7 +47,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--robot",
-        choices=["unitree_g1"],
+        choices=sorted(IK_CONFIG_DICT["xsens_mvn"]),
         default="unitree_g1",
     )
 
