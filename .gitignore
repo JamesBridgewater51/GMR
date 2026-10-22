@@ -1,4 +1,5 @@
 # Python
+.venv/
 *.egg-info/
 __pycache__/
 *.pyc
@@ -39,6 +40,8 @@ Thumbs.db
 
 # Data directories
 data/
+# Committed test fixtures are an exception (see tests/).
+!tests/data/
 data_record/
 Download/
 assets/body_models/

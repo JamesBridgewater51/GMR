@@ -1,0 +1,40 @@
+name: tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        # 3.10 is the supported floor (requires-python), 3.13 the default
+        # development version (.python-version).
+        python: ["3.10", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Keep CI fast: only the packages, tests, and the robot assets the
+          # regression tests use (the full assets tree is ~1.2 GB).
+          sparse-checkout: |
+            general_motion_retargeting
+            tests
+            assets/unitree_g1
+            assets/booster_t1
+            pyproject.toml
+            uv.lock
+            README.md
+          sparse-checkout-cone-mode: false
+      - uses: astral-sh/setup-uv@v5
+        with:
+          python-version: ${{ matrix.python }}
+          enable-cache: true
+      - name: Install GMR
+        # Locked resolution from uv.lock, so tests run against the exact
+        # dependency versions the goldens were generated with.
+        run: uv sync --frozen
+      - name: Run tests
+        run: uv run --no-sync pytest tests -v

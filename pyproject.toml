@@ -1,0 +1,46 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "general_motion_retargeting"
+version = "0.2.0"
+description = "General Motion Retargeting (GMR) for Humanoid Robots"
+readme = "README.md"
+license = { text = "MIT" }
+authors = [
+    { name = "Yanjie Ze", email = "lastyanjieze@gmail.com" },
+]
+requires-python = ">=3.10,<3.14"
+dependencies = [
+    "loop_rate_limiters",
+    "mink",
+    "mujoco",
+    "numpy",
+    "scipy",
+    "torch",
+    "qpsolvers[proxqp]",
+    "rich",
+    "tqdm",
+    "opencv-python",
+    "natsort",
+    "psutil",
+    "smplx @ git+https://github.com/vchoutas/smplx",
+    "protobuf",
+    "redis[hiredis]",
+    "imageio[ffmpeg]",
+]
+
+[project.urls]
+Repository = "https://github.com/YanjieZe/GMR"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.3",
+]
+
+[tool.setuptools.packages.find]
+include = ["general_motion_retargeting*"]
+
+[tool.setuptools.package-data]
+general_motion_retargeting = ["ik_configs/*.json"]
