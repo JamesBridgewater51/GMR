@@ -7,9 +7,8 @@ import numpy as np
 from rich import print
 from tqdm import tqdm
 
+from general_motion_retargeting import IK_CONFIG_DICT, RobotMotionViewer
 from general_motion_retargeting import GeneralMotionRetargeting as GMR
-from general_motion_retargeting import IK_CONFIG_DICT
-from general_motion_retargeting import RobotMotionViewer
 from general_motion_retargeting.utils.xsens import load_xsens_file
 
 if __name__ == "__main__":
