@@ -6,6 +6,7 @@ import time
 import numpy as np
 
 from general_motion_retargeting import GeneralMotionRetargeting as GMR
+from general_motion_retargeting import IK_CONFIG_DICT
 from general_motion_retargeting import RobotMotionViewer
 from general_motion_retargeting.utils.smpl import load_gvhmr_pred_file, get_gvhmr_data_offline_fast
 
@@ -26,10 +27,7 @@ if __name__ == "__main__":
     
     parser.add_argument(
         "--robot",
-        choices=["unitree_g1", "unitree_g1_with_hands", "unitree_h1", "unitree_h1_2",
-                 "booster_t1", "booster_t1_29dof","stanford_toddy", "fourier_n1", 
-                "engineai_pm01", "kuavo_s45", "hightorque_hi", "galaxea_r1pro", "berkeley_humanoid_lite", "booster_k1",
-                "pnd_adam_lite", "openloong", "tienkung"],
+        choices=sorted(IK_CONFIG_DICT["smplx"]),
         default="unitree_g1",
     )
     

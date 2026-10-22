@@ -2,6 +2,7 @@ import argparse
 import pathlib
 import time
 from general_motion_retargeting import GeneralMotionRetargeting as GMR
+from general_motion_retargeting import IK_CONFIG_DICT
 from general_motion_retargeting import RobotMotionViewer
 from general_motion_retargeting.utils.xsens import load_xsens_file
 from rich import print
@@ -24,12 +25,7 @@ if __name__ == "__main__":
 
     parser.add_argument(
         "--robot",
-        choices=[
-            "unitree_g1",
-            "unitree_h1_2",
-            "Q1",
-            "X1",
-        ],
+        choices=sorted(IK_CONFIG_DICT["bvh_xsens"]),
         default="unitree_h1_2",
     )
 
