@@ -26,65 +26,75 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-from typing import Tuple
 
 import torch
-from torch import Tensor
+
 
 def euler_from_quaternion(quat_angle):
-        """
-        Convert a quaternion into euler angles (roll, pitch, yaw)
-        roll is rotation around x in radians (counterclockwise)
-        pitch is rotation around y in radians (counterclockwise)
-        yaw is rotation around z in radians (counterclockwise)
-        """
-        x = quat_angle[:,0]; y = quat_angle[:,1]; z = quat_angle[:,2]; w = quat_angle[:,3]
-        t0 = +2.0 * (w * x + y * z)
-        t1 = +1.0 - 2.0 * (x * x + y * y)
-        roll_x = torch.atan2(t0, t1)
-     
-        t2 = +2.0 * (w * y - z * x)
-        t2 = torch.clip(t2, -1, 1)
-        pitch_y = torch.asin(t2)
-     
-        t3 = +2.0 * (w * z + x * y)
-        t4 = +1.0 - 2.0 * (y * y + z * z)
-        yaw_z = torch.atan2(t3, t4)
-     
-        return roll_x, pitch_y, yaw_z # in radians
+    """
+    Convert a quaternion into euler angles (roll, pitch, yaw)
+    roll is rotation around x in radians (counterclockwise)
+    pitch is rotation around y in radians (counterclockwise)
+    yaw is rotation around z in radians (counterclockwise)
+    """
+    x = quat_angle[:, 0]
+    y = quat_angle[:, 1]
+    z = quat_angle[:, 2]
+    w = quat_angle[:, 3]
+    t0 = +2.0 * (w * x + y * z)
+    t1 = +1.0 - 2.0 * (x * x + y * y)
+    roll_x = torch.atan2(t0, t1)
+
+    t2 = +2.0 * (w * y - z * x)
+    t2 = torch.clip(t2, -1, 1)
+    pitch_y = torch.asin(t2)
+
+    t3 = +2.0 * (w * z + x * y)
+    t4 = +1.0 - 2.0 * (y * y + z * z)
+    yaw_z = torch.atan2(t3, t4)
+
+    return roll_x, pitch_y, yaw_z  # in radians
 
 
 @torch.jit.script
 def normalize(x, eps: float = 1e-9):
     return x / x.norm(p=2, dim=-1).clamp(min=eps, max=None).unsqueeze(-1)
 
+
 @torch.jit.script
 def normalize_angle(x):
     return torch.atan2(torch.sin(x), torch.cos(x))
+
 
 @torch.jit.script
 def quat_rotate(q, v):
     shape = q.shape
     q_w = q[:, -1]
     q_vec = q[:, :3]
-    a = v * (2.0 * q_w ** 2 - 1.0).unsqueeze(-1)
+    a = v * (2.0 * q_w**2 - 1.0).unsqueeze(-1)
     b = torch.cross(q_vec, v, dim=-1) * q_w.unsqueeze(-1) * 2.0
-    c = q_vec * \
-        torch.bmm(q_vec.view(shape[0], 1, 3), v.view(
-            shape[0], 3, 1)).squeeze(-1) * 2.0
+    c = (
+        q_vec
+        * torch.bmm(q_vec.view(shape[0], 1, 3), v.view(shape[0], 3, 1)).squeeze(-1)
+        * 2.0
+    )
     return a + b + c
+
 
 @torch.jit.script
 def quat_rotate_inverse(q, v):
     shape = q.shape
     q_w = q[:, -1]
     q_vec = q[:, :3]
-    a = v * (2.0 * q_w ** 2 - 1.0).unsqueeze(-1)
+    a = v * (2.0 * q_w**2 - 1.0).unsqueeze(-1)
     b = torch.cross(q_vec, v, dim=-1) * q_w.unsqueeze(-1) * 2.0
-    c = q_vec * \
-        torch.bmm(q_vec.view(shape[0], 1, 3), v.view(
-            shape[0], 3, 1)).squeeze(-1) * 2.0
+    c = (
+        q_vec
+        * torch.bmm(q_vec.view(shape[0], 1, 3), v.view(shape[0], 3, 1)).squeeze(-1)
+        * 2.0
+    )
     return a - b + c
+
 
 @torch.jit.script
 def quat_from_euler_xyz(roll, pitch, yaw):
@@ -102,6 +112,7 @@ def quat_from_euler_xyz(roll, pitch, yaw):
 
     return torch.stack([qx, qy, qz, qw], dim=-1)
 
+
 @torch.jit.script
 def quat_unit(a):
     return normalize(a)
@@ -113,6 +124,7 @@ def quat_from_angle_axis(angle, axis):
     xyz = normalize(axis) * theta.sin()
     w = theta.cos()
     return quat_unit(torch.cat([xyz, w], dim=-1))
+
 
 @torch.jit.script
 def quat_mul(a, b):
@@ -136,6 +148,7 @@ def quat_mul(a, b):
     quat = torch.stack([x, y, z, w], dim=-1).view(shape)
 
     return quat
+
 
 @torch.jit.script
 def quat_conjugate(a):
@@ -166,12 +179,14 @@ def quat_to_angle_axis(q):
     axis = torch.where(mask_expand, axis, default_axis)
     return angle, axis
 
+
 @torch.jit.script
 def angle_axis_to_exp_map(angle, axis):
     # compute exponential map from axis-angle
     angle_expand = angle.unsqueeze(-1)
     exp_map = angle_expand * axis
     return exp_map
+
 
 @torch.jit.script
 def quat_to_exp_map(q):
@@ -181,25 +196,28 @@ def quat_to_exp_map(q):
     exp_map = angle_axis_to_exp_map(angle, axis)
     return exp_map
 
+
 @torch.jit.script
 def quat_to_tan_norm(q):
     # represents a rotation using the tangent and normal vectors
     ref_tan = torch.zeros_like(q[..., 0:3])
     ref_tan[..., 0] = 1
     tan = quat_rotate(q, ref_tan)
-    
+
     ref_norm = torch.zeros_like(q[..., 0:3])
     ref_norm[..., -1] = 1
     norm = quat_rotate(q, ref_norm)
-    
+
     norm_tan = torch.cat([tan, norm], dim=len(tan.shape) - 1)
     return norm_tan
+
 
 @torch.jit.script
 def euler_xyz_to_exp_map(roll, pitch, yaw):
     q = quat_from_euler_xyz(roll, pitch, yaw)
     exp_map = quat_to_exp_map(q)
     return exp_map
+
 
 @torch.jit.script
 def exp_map_to_angle_axis(exp_map):
@@ -220,20 +238,22 @@ def exp_map_to_angle_axis(exp_map):
 
     return angle, axis
 
+
 @torch.jit.script
 def exp_map_to_quat(exp_map):
     angle, axis = exp_map_to_angle_axis(exp_map)
     q = quat_from_angle_axis(angle, axis)
     return q
 
+
 @torch.jit.script
 def slerp(q0, q1, t):
-    assert(len(t.shape) == len(q0.shape) - 1)
+    assert len(t.shape) == len(q0.shape) - 1
     cos_half_theta = torch.sum(q0 * q1, dim=-1)
 
     neg_mask = cos_half_theta < 0
     q1 = torch.where(neg_mask.unsqueeze(-1), -q1, q1)
-    
+
     cos_half_theta = torch.abs(cos_half_theta)
     cos_half_theta = torch.unsqueeze(cos_half_theta, dim=-1)
 
@@ -243,13 +263,14 @@ def slerp(q0, q1, t):
     t = t.unsqueeze(-1)
     ratioA = torch.sin((1 - t) * half_theta) / sin_half_theta
     ratioB = torch.sin(t * half_theta) / sin_half_theta
-    
+
     new_q = ratioA * q0 + ratioB * q1
 
     new_q = torch.where(torch.abs(sin_half_theta) < 0.001, 0.5 * q0 + 0.5 * q1, new_q)
     new_q = torch.where(torch.abs(cos_half_theta) >= 1, q0, new_q)
 
     return new_q
+
 
 @torch.jit.script
 def slerp2(q0, q1, t):
@@ -261,18 +282,17 @@ def slerp2(q0, q1, t):
     cos_half_theta = torch.abs(cos_half_theta)
     cos_half_theta = torch.unsqueeze(cos_half_theta, dim=-1)
 
-    half_theta = torch.acos(cos_half_theta);
-    sin_half_theta = torch.sqrt(1.0 - cos_half_theta * cos_half_theta);
-
-    ratioA = torch.sin((1 - t) * half_theta) / sin_half_theta;
-    ratioB = torch.sin(t * half_theta) / sin_half_theta; 
-    
+    half_theta = torch.acos(cos_half_theta)
+    sin_half_theta = torch.sqrt(1.0 - cos_half_theta * cos_half_theta)
+    ratioA = torch.sin((1 - t) * half_theta) / sin_half_theta
+    ratioB = torch.sin(t * half_theta) / sin_half_theta
     new_q = ratioA * q0 + ratioB * q1
 
     new_q = torch.where(torch.abs(sin_half_theta) < 0.001, 0.5 * q0 + 0.5 * q1, new_q)
     new_q = torch.where(torch.abs(cos_half_theta) >= 1, q0, new_q)
 
     return new_q
+
 
 @torch.jit.script
 def calc_heading(q):
@@ -286,6 +306,7 @@ def calc_heading(q):
     heading = torch.atan2(rot_dir[..., 1], rot_dir[..., 0])
     return heading
 
+
 @torch.jit.script
 def calc_heading_quat(q):
     # calculate heading rotation from quaternion
@@ -297,6 +318,7 @@ def calc_heading_quat(q):
 
     heading_q = quat_from_angle_axis(heading, axis)
     return heading_q
+
 
 @torch.jit.script
 def calc_heading_quat_inv(q):
@@ -310,6 +332,7 @@ def calc_heading_quat_inv(q):
     heading_q = quat_from_angle_axis(-heading, axis)
     return heading_q
 
+
 @torch.jit.script
 def quat_pos(x):
     q = x
@@ -317,15 +340,16 @@ def quat_pos(x):
     q = (1 - 2 * z) * q
     return q
 
+
 @torch.jit.script
 def quat_to_axis_angle(q):
     eps = 1e-5
     qx, qy, qz, qw = 0, 1, 2, 3
-    
+
     # need to make sure w is not negative to calculate geodesic distance
     q = quat_pos(q)
     length = torch.norm(q[..., 0:3], dim=-1, p=2)
-    
+
     angle = 2.0 * torch.atan2(length, q[..., qw])
     axis = q[..., qx:qw] / length.unsqueeze(-1)
 
@@ -339,16 +363,19 @@ def quat_to_axis_angle(q):
 
     return axis, angle
 
+
 @torch.jit.script
 def quat_diff(q0, q1):
     dq = quat_mul(q1, quat_conjugate(q0))
     return dq
+
 
 @torch.jit.script
 def quat_diff_angle(q0, q1):
     dq = quat_diff(q0, q1)
     _, angle = quat_to_axis_angle(dq)
     return angle
+
 
 @torch.jit.script
 def axis_angle_to_quat(axis, angle):

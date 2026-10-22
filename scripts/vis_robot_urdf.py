@@ -1,12 +1,7 @@
-
-import math
-from isaacgym import gymapi
-from isaacgym import gymutil
 import numpy as np
+from isaacgym import gymapi
 from isaacgym.torch_utils import *
 from termcolor import cprint
-import argparse
-
 
 # initialize gym
 gym = gymapi.acquire_gym()
@@ -34,7 +29,7 @@ if sim is None:
 # create viewer using the default camera properties
 viewer = gym.create_viewer(sim, gymapi.CameraProperties())
 if viewer is None:
-    raise ValueError('*** Failed to create viewer')
+    raise ValueError("*** Failed to create viewer")
 
 # add ground plane
 plane_params = gymapi.PlaneParams()
@@ -47,7 +42,7 @@ env_lower = gymapi.Vec3(-spacing, 0.0, -spacing)
 env_upper = gymapi.Vec3(spacing, 0.0, spacing)
 
 
-asset_root = f"../assets/"
+asset_root = "../assets/"
 # asset_file = "agibot_a2/urdf/model.urdf"
 # asset_file = "unitree_h1/h1.urdf"
 # asset_file = "adam_lite/adam_lite.urdf"
@@ -64,9 +59,9 @@ asset_options.default_dof_drive_mode = gymapi.DOF_MODE_POS
 asset_options.collapse_fixed_joints = False
 asset_options.use_mesh_materials = False
 # asset_options.vhacd_enabled = False
-asset_options.vhacd_enabled = True 
-asset_options.vhacd_params = gymapi.VhacdParams() 
-asset_options.vhacd_params.resolution = 200000 
+asset_options.vhacd_enabled = True
+asset_options.vhacd_params = gymapi.VhacdParams()
+asset_options.vhacd_params.resolution = 200000
 
 asset_options.flip_visual_attachments = True
 # asset_options.flip_visual_attachments = False
@@ -76,15 +71,24 @@ robot_asset = gym.load_asset(sim, asset_root, asset_file, asset_options)
 
 robot_link_dict = gym.get_asset_rigid_body_dict(robot_asset)
 robot_dof_dict = gym.get_asset_dof_dict(robot_asset)
-ordered_body_dict = {k: v for k, v in sorted(robot_link_dict.items(), key=lambda item: item[1])}
-cprint(f'[HumanoidRobot] Full robot body dict. NumBody: {len(robot_link_dict.keys())}', 'blue')
+ordered_body_dict = {
+    k: v for k, v in sorted(robot_link_dict.items(), key=lambda item: item[1])
+}
+cprint(
+    f"[HumanoidRobot] Full robot body dict. NumBody: {len(robot_link_dict.keys())}",
+    "blue",
+)
 for k, v in ordered_body_dict.items():
-    cprint(f'\t {k} {v}', 'blue')
+    cprint(f"\t {k} {v}", "blue")
 
-ordered_dof_dict = {k: v for k, v in sorted(robot_dof_dict.items(), key=lambda item: item[1])}
-cprint(f'[HumanoidRobot] Full robot dof dict. DoF: {len(ordered_dof_dict.keys())}', 'green')
+ordered_dof_dict = {
+    k: v for k, v in sorted(robot_dof_dict.items(), key=lambda item: item[1])
+}
+cprint(
+    f"[HumanoidRobot] Full robot dof dict. DoF: {len(ordered_dof_dict.keys())}", "green"
+)
 for k, v in ordered_dof_dict.items():
-    cprint(f'\t {k} {v}', 'green')
+    cprint(f"\t {k} {v}", "green")
 
 # print body names and dof names in the format: [""]
 print("Body names: ", ordered_body_dict.keys())
@@ -92,19 +96,21 @@ print("DoF names: ", ordered_dof_dict.keys())
 
 # initial root pose
 initial_pose = gymapi.Transform()
-initial_pose.p = gymapi.Vec3(0.0, 1.5, 0.0) # since isaacgym uses y-up coordinate system
+initial_pose.p = gymapi.Vec3(
+    0.0, 1.5, 0.0
+)  # since isaacgym uses y-up coordinate system
 initial_pose.r = gymapi.Quat(-0.707107, 0.0, 0.0, 0.707107)
 # initial_pose.r = gymapi.Quat(0.0, 0.0, 0.0, 1.0)
 
 env = gym.create_env(sim, env_lower, env_upper, 0)
-robot = gym.create_actor(env, robot_asset, initial_pose, 'robot', 0, 1)
+robot = gym.create_actor(env, robot_asset, initial_pose, "robot", 0, 1)
 
 
 # Configure DOF properties
 props = gym.get_actor_dof_properties(env, robot)
-props['driveMode'][:] = gymapi.DOF_MODE_POS  # Set all joints to position control
-props['stiffness'][:] = 400.0  # Set stiffness for better control
-props['damping'][:] = 40.0    # Set damping to reduce oscillations
+props["driveMode"][:] = gymapi.DOF_MODE_POS  # Set all joints to position control
+props["stiffness"][:] = 400.0  # Set stiffness for better control
+props["damping"][:] = 40.0  # Set damping to reduce oscillations
 gym.set_actor_dof_properties(env, robot, props)
 
 
@@ -120,7 +126,6 @@ gym.set_actor_dof_position_targets(env, robot, initial_dof_positions)
 
 # Simulate
 while not gym.query_viewer_has_closed(viewer):
-
     # step the physics
     gym.simulate(sim)
     gym.fetch_results(sim, True)
@@ -133,8 +138,7 @@ while not gym.query_viewer_has_closed(viewer):
     gym.sync_frame_time(sim)
 
 
-
-print('Done')
+print("Done")
 
 gym.destroy_viewer(viewer)
 gym.destroy_sim(sim)

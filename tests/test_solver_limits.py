@@ -1,12 +1,11 @@
 """Regression test for forwarding limits to Mink."""
 
+import mink
 import numpy as np
 import pytest
-
-import mink
-from general_motion_retargeting import GeneralMotionRetargeting
-
 from synthetic_motion import build_frames
+
+from general_motion_retargeting import GeneralMotionRetargeting
 
 
 def test_solve_ik_receives_limits_keyword(monkeypatch: pytest.MonkeyPatch) -> None:

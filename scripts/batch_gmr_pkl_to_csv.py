@@ -1,13 +1,17 @@
 import argparse
-import pickle
 import os
+import pickle
 
 import numpy as np
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Convert GMR pickle files to CSV (for beyondmimic)")
+    parser = argparse.ArgumentParser(
+        description="Convert GMR pickle files to CSV (for beyondmimic)"
+    )
     parser.add_argument(
-        "--folder", type=str, help="Path to the folder containing pickle files from GMR",
+        "--folder",
+        type=str,
+        help="Path to the folder containing pickle files from GMR",
     )
     args = parser.parse_args()
 
@@ -22,12 +26,12 @@ if __name__ == "__main__":
             continue
 
         dof_pos = motion_data["dof_pos"]
-        frame_rate = motion_data["fps"]            
+        frame_rate = motion_data["fps"]
         motion = np.zeros((dof_pos.shape[0], dof_pos.shape[1] + 7), dtype=np.float32)
         motion[:, :3] = motion_data["root_pos"]
         motion[:, 3:7] = motion_data["root_rot"]
         motion[:, 7:] = dof_pos
-        
+
         if frame_rate > 30:
             # downsample to 30 fps
             downsample_factor = frame_rate / 30.0
@@ -35,11 +39,12 @@ if __name__ == "__main__":
             old_length = motion.shape[0]
             motion = motion[indices]
             print(f"Downsampled from {old_length} to {motion.shape[0]} frames")
-        
 
         np.savetxt(
             os.path.join(args.folder, "csv", file.replace(".pkl", ".csv")),
             motion,
             delimiter=",",
         )
-        print(f"({i}/{len(os.listdir(args.folder))}) Saved to {os.path.join(args.folder, 'csv', file.replace('.pkl', '.csv'))}")
+        print(
+            f"({i}/{len(os.listdir(args.folder))}) Saved to {os.path.join(args.folder, 'csv', file.replace('.pkl', '.csv'))}"
+        )

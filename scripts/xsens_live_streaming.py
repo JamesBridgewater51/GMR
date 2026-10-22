@@ -13,10 +13,12 @@ import time
 import numpy as np
 from rich import print
 
-from general_motion_retargeting.utils.xsens_vendor.xsens_to_gmr_adapter import XsensToGMR
 from general_motion_retargeting import GeneralMotionRetargeting as GMR
 from general_motion_retargeting import IK_CONFIG_DICT
 from general_motion_retargeting import RobotMotionViewer
+from general_motion_retargeting.utils.xsens_vendor.xsens_to_gmr_adapter import (
+    XsensToGMR,
+)
 
 # Global flag for graceful shutdown
 g_running = True
@@ -29,7 +31,6 @@ def signal_handler(signum, frame):
 
 
 if __name__ == "__main__":
-
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
 
@@ -202,13 +203,14 @@ if __name__ == "__main__":
         # Save trajectory
         if args.save_dir is not None and qpos_list:
             import pickle
+
             root_pos = np.array([qpos[:3] for qpos in qpos_list])
             # save from wxyz to xyzw
-            root_rot = np.array([qpos[3:7][[1,2,3,0]] for qpos in qpos_list])
+            root_rot = np.array([qpos[3:7][[1, 2, 3, 0]] for qpos in qpos_list])
             dof_pos = np.array([qpos[7:] for qpos in qpos_list])
             local_body_pos = None
             body_names = None
-            
+
             motion_data = {
                 "fps": target_fps,
                 "root_pos": root_pos,

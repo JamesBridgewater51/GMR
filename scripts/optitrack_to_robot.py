@@ -1,8 +1,10 @@
-from general_motion_retargeting.optitrack_vendor.NatNetClient import setup_optitrack
+import argparse
+import threading
+
 from general_motion_retargeting import GeneralMotionRetargeting as GMR
 from general_motion_retargeting import RobotMotionViewer
-import threading
-import argparse
+from general_motion_retargeting.optitrack_vendor.NatNetClient import setup_optitrack
+
 
 def main(args):
     # Check if firewall is disabled on this machine
@@ -28,10 +30,10 @@ def main(args):
     print("Starting motion retargeting...")
 
     retarget = GMR(
-            src_human="fbx",
-            tgt_robot=args.robot,
-            actual_human_height=1.6,
-        )
+        src_human="fbx",
+        tgt_robot=args.robot,
+        actual_human_height=1.6,
+    )
     viewer = RobotMotionViewer(robot_type="unitree_g1")
 
     while True:
@@ -54,4 +56,3 @@ if __name__ == "__main__":
     parser.add_argument("--robot", type=str, default="unitree_g1")
     args = parser.parse_args()
     main(args)
-    

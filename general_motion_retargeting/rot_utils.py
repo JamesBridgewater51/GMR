@@ -4,7 +4,7 @@ from scipy.spatial.transform import Rotation as R
 
 
 def quatToEuler(quat):
-    """ 将四元数转换为欧拉角(roll, pitch, yaw)。 """
+    """将四元数转换为欧拉角(roll, pitch, yaw)。"""
     eulerVec = np.zeros(3)
     qw, qx, qy, qz = quat
     sinr_cosp = 2 * (qw * qx + qy * qz)
@@ -23,7 +23,6 @@ def quatToEuler(quat):
     return eulerVec
 
 
-
 def quat_mul_np(x, y, scalar_first=True):
     """
     Performs quaternion multiplication on arrays of quaternions
@@ -34,19 +33,22 @@ def quat_mul_np(x, y, scalar_first=True):
     """
     if scalar_first:
         pass
-    else: # convert to scalar-first
+    else:  # convert to scalar-first
         x = x[..., [3, 0, 1, 2]]
         y = y[..., [3, 0, 1, 2]]
 
     x0, x1, x2, x3 = x[..., 0:1], x[..., 1:2], x[..., 2:3], x[..., 3:4]
     y0, y1, y2, y3 = y[..., 0:1], y[..., 1:2], y[..., 2:3], y[..., 3:4]
 
-    res = np.concatenate([
-        x0 * y0 - x1 * y1 - x2 * y2 - x3 * y3,
-        x0 * y1 + x1 * y0 + x2 * y3 - x3 * y2,
-        x0 * y2 - x1 * y3 + x2 * y0 + x3 * y1,
-        x0 * y3 + x1 * y2 - x2 * y1 + x3 * y0
-    ], axis=-1)
+    res = np.concatenate(
+        [
+            x0 * y0 - x1 * y1 - x2 * y2 - x3 * y3,
+            x0 * y1 + x1 * y0 + x2 * y3 - x3 * y2,
+            x0 * y2 - x1 * y3 + x2 * y0 + x3 * y1,
+            x0 * y3 + x1 * y2 - x2 * y1 + x3 * y0,
+        ],
+        axis=-1,
+    )
 
     if scalar_first:
         pass
@@ -55,16 +57,17 @@ def quat_mul_np(x, y, scalar_first=True):
 
     return res
 
+
 def quat_rotate_inverse(q, v):
     """
-    将向量 v 以四元数 q 的逆旋转进行变换。  
+    将向量 v 以四元数 q 的逆旋转进行变换。
     为保持一致，以下代码与原脚本中的实现相同。
     """
     q = np.asarray(q)
     v = np.asarray(v)
 
-    q_w = q[:, -1]      # w
-    q_vec = q[:, :3]    # x, y, z
+    q_w = q[:, -1]  # w
+    q_vec = q[:, :3]  # x, y, z
 
     a = v * (2.0 * q_w**2 - 1.0)[:, np.newaxis]
     b = np.cross(q_vec, v) * (2.0 * q_w)[:, np.newaxis]
@@ -72,6 +75,7 @@ def quat_rotate_inverse(q, v):
     c = q_vec * (2.0 * dot)
 
     return a - b + c
+
 
 def quat_rotate_inverse_torch(q, v, scalar_first=True):
     if scalar_first:
@@ -81,12 +85,15 @@ def quat_rotate_inverse_torch(q, v, scalar_first=True):
     shape = q.shape
     q_w = q[:, -1]
     q_vec = q[:, :3]
-    a = v * (2.0 * q_w ** 2 - 1.0).unsqueeze(-1)
+    a = v * (2.0 * q_w**2 - 1.0).unsqueeze(-1)
     b = torch.cross(q_vec, v, dim=-1) * q_w.unsqueeze(-1) * 2.0
-    c = q_vec * \
-        torch.bmm(q_vec.view(shape[0], 1, 3), v.view(
-            shape[0], 3, 1)).squeeze(-1) * 2.0
+    c = (
+        q_vec
+        * torch.bmm(q_vec.view(shape[0], 1, 3), v.view(shape[0], 3, 1)).squeeze(-1)
+        * 2.0
+    )
     return a - b + c
+
 
 def quat_rotate_inverse_np(q, v, scalar_first=True):
     q = np.asarray(q)
@@ -97,10 +104,11 @@ def quat_rotate_inverse_np(q, v, scalar_first=True):
         q = q[..., [0, 1, 2, 3]]
     q_w = q[..., -1]
     q_vec = q[..., :3]
-    a = v * (2.0 * q_w ** 2 - 1.0)
+    a = v * (2.0 * q_w**2 - 1.0)
     b = np.cross(q_vec, v) * (2.0 * q_w)
     c = q_vec * np.sum(q_vec * v, axis=-1, keepdims=True) * 2.0
     return a - b + c
+
 
 def euler_from_quaternion_torch(quat_angle, scalar_first=True):
     """
@@ -113,40 +121,47 @@ def euler_from_quaternion_torch(quat_angle, scalar_first=True):
         quat_angle = quat_angle[..., [1, 2, 3, 0]]
     else:
         quat_angle = quat_angle[..., [0, 1, 2, 3]]
-    x = quat_angle[:,0]; y = quat_angle[:,1]; z = quat_angle[:,2]; w = quat_angle[:,3]
+    x = quat_angle[:, 0]
+    y = quat_angle[:, 1]
+    z = quat_angle[:, 2]
+    w = quat_angle[:, 3]
     t0 = +2.0 * (w * x + y * z)
     t1 = +1.0 - 2.0 * (x * x + y * y)
     roll_x = torch.atan2(t0, t1)
-    
+
     t2 = +2.0 * (w * y - z * x)
     t2 = torch.clip(t2, -1, 1)
     pitch_y = torch.asin(t2)
-    
+
     t3 = +2.0 * (w * z + x * y)
     t4 = +1.0 - 2.0 * (y * y + z * z)
     yaw_z = torch.atan2(t3, t4)
-    
-    return roll_x, pitch_y, yaw_z # in radians
+
+    return roll_x, pitch_y, yaw_z  # in radians
+
 
 def euler_from_quaternion_np(quat, scalar_first=True):
     if scalar_first:
         quat = quat[..., [1, 2, 3, 0]]
     else:
         quat = quat[..., [0, 1, 2, 3]]
-    
-    x = quat[:,0]; y = quat[:,1]; z = quat[:,2]; w = quat[:,3]
+
+    x = quat[:, 0]
+    y = quat[:, 1]
+    z = quat[:, 2]
+    w = quat[:, 3]
     t0 = +2.0 * (w * x + y * z)
     t1 = +1.0 - 2.0 * (x * x + y * y)
     roll_x = np.arctan2(t0, t1)
-    
+
     t2 = +2.0 * (w * y - z * x)
     t2 = np.clip(t2, -1, 1)
     pitch_y = np.arcsin(t2)
-    
+
     t3 = +2.0 * (w * z + x * y)
     t4 = +1.0 - 2.0 * (y * y + z * z)
     yaw_z = np.arctan2(t3, t4)
-    
+
     return roll_x, pitch_y, yaw_z
 
 

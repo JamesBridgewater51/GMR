@@ -6,7 +6,9 @@ ASSET_ROOT = HERE / ".." / "assets"
 
 ROBOT_XML_DICT = {
     "unitree_g1": ASSET_ROOT / "unitree_g1" / "g1_mocap_29dof.xml",
-    "unitree_g1_with_hands": ASSET_ROOT / "unitree_g1" / "g1_mocap_29dof_with_hands.xml",
+    "unitree_g1_with_hands": ASSET_ROOT
+    / "unitree_g1"
+    / "g1_mocap_29dof_with_hands.xml",
     "unitree_h1": ASSET_ROOT / "unitree_h1" / "h1.xml",
     "unitree_h1_2": ASSET_ROOT / "unitree_h1_2" / "h1_2_handless.xml",
     "unitree_h2": ASSET_ROOT / "unitree_h2" / "h2_mocap.xml",
@@ -23,12 +25,15 @@ ROBOT_XML_DICT = {
     "pnd_adam_lite": ASSET_ROOT / "pnd_adam_lite" / "scene.xml",
     "tienkung": ASSET_ROOT / "tienkung" / "mjcf" / "tienkung.xml",
     "pal_talos": ASSET_ROOT / "pal_talos" / "talos.xml",
-    "fourier_gr3": ASSET_ROOT / "fourier_gr3v2_1_1" / "mjcf" / "gr3v2_1_1_dummy_hand.xml",
+    "fourier_gr3": ASSET_ROOT
+    / "fourier_gr3v2_1_1"
+    / "mjcf"
+    / "gr3v2_1_1_dummy_hand.xml",
 }
 
 IK_CONFIG_DICT = {
     # offline data
-    "smplx":{
+    "smplx": {
         "unitree_g1": IK_CONFIG_ROOT / "smplx_to_g1.json",
         "unitree_g1_with_hands": IK_CONFIG_ROOT / "smplx_to_g1.json",
         "unitree_h1": IK_CONFIG_ROOT / "smplx_to_h1.json",
@@ -47,7 +52,7 @@ IK_CONFIG_DICT = {
         "tienkung": IK_CONFIG_ROOT / "smplx_to_tienkung.json",
         "fourier_gr3": IK_CONFIG_ROOT / "smplx_to_gr3.json",
     },
-    "bvh_lafan1":{
+    "bvh_lafan1": {
         "unitree_g1": IK_CONFIG_ROOT / "bvh_lafan1_to_g1.json",
         "unitree_g1_with_hands": IK_CONFIG_ROOT / "bvh_lafan1_to_g1.json",
         "unitree_h2": IK_CONFIG_ROOT / "bvh_lafan1_to_h2.json",
@@ -57,22 +62,21 @@ IK_CONFIG_DICT = {
         "engineai_pm01": IK_CONFIG_ROOT / "bvh_lafan1_to_pm01.json",
         "pal_talos": IK_CONFIG_ROOT / "bvh_to_talos.json",
     },
-    "bvh_nokov":{
+    "bvh_nokov": {
         "unitree_g1": IK_CONFIG_ROOT / "bvh_nokov_to_g1.json",
     },
-    "bvh_xsens":{
+    "bvh_xsens": {
         "unitree_g1": IK_CONFIG_ROOT / "bvh_xsens_to_g1.json",
         "unitree_h1_2": IK_CONFIG_ROOT / "bvh_xsens_to_h1_2.json",
     },
-    "fbx":{
+    "fbx": {
         "unitree_g1": IK_CONFIG_ROOT / "fbx_to_g1.json",
         "unitree_g1_with_hands": IK_CONFIG_ROOT / "fbx_to_g1.json",
     },
-    "fbx_offline":{
+    "fbx_offline": {
         "unitree_g1": IK_CONFIG_ROOT / "fbx_offline_to_g1.json",
     },
-    
-    "xrobot":{
+    "xrobot": {
         "unitree_g1": IK_CONFIG_ROOT / "xrobot_to_g1.json",
     },
     "xsens_mvn": {

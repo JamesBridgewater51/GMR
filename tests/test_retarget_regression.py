@@ -50,9 +50,7 @@ def synthetic_frames() -> tuple[Frame, ...]:
 
 
 @pytest.mark.parametrize("robot", ROBOTS)
-def test_qpos_matches_golden(
-    robot: str, synthetic_frames: Sequence[Frame]
-) -> None:
+def test_qpos_matches_golden(robot: str, synthetic_frames: Sequence[Frame]) -> None:
     qpos = retarget_motion(robot, synthetic_frames)
     golden_path = DATA_DIR / f"golden_qpos_{robot}.npy"
     if os.environ.get("GMR_REGEN_GOLDENS") == "1":
@@ -77,9 +75,7 @@ def test_qpos_is_sane(robot: str, synthetic_frames: Sequence[Frame]) -> None:
 
 
 @pytest.mark.parametrize("robot", ROBOTS)
-def test_required_tasks_converge(
-    robot: str, synthetic_frames: Sequence[Frame]
-) -> None:
+def test_required_tasks_converge(robot: str, synthetic_frames: Sequence[Frame]) -> None:
     """Check that pelvis and foot position tasks converge in both IK stages."""
     retargeter = GeneralMotionRetargeting("smplx", robot, verbose=False)
     task_groups = (

@@ -1,26 +1,33 @@
 import argparse
+import os
 import pathlib
+import pickle
 import time
-from general_motion_retargeting import GeneralMotionRetargeting as GMR
-from general_motion_retargeting import IK_CONFIG_DICT
-from general_motion_retargeting import RobotMotionViewer
+
+import numpy as np
 from rich import print
 from tqdm import tqdm
-import os
-import numpy as np
-import pickle
+
+from general_motion_retargeting import IK_CONFIG_DICT, RobotMotionViewer
+from general_motion_retargeting import GeneralMotionRetargeting as GMR
+
 
 def load_optitrack_fbx_motion_file(motion_file):
     with open(motion_file, "rb") as f:
         motion_data = pickle.load(f)
     return motion_data
 
+
 def offset_to_ground(retargeter: GMR, motion_data):
     offset = np.inf
     for human_data in motion_data:
         human_data = retargeter.to_numpy(human_data)
-        human_data = retargeter.scale_human_data(human_data, retargeter.human_root_name, retargeter.human_scale_table)
-        human_data = retargeter.offset_human_data(human_data, retargeter.pos_offsets1, retargeter.rot_offsets1)
+        human_data = retargeter.scale_human_data(
+            human_data, retargeter.human_root_name, retargeter.human_scale_table
+        )
+        human_data = retargeter.offset_human_data(
+            human_data, retargeter.pos_offsets1, retargeter.rot_offsets1
+        )
         for body_name in human_data.keys():
             pos, quat = human_data[body_name]
             if pos[2] < offset:
@@ -28,8 +35,8 @@ def offset_to_ground(retargeter: GMR, motion_data):
 
     return offset
 
+
 if __name__ == "__main__":
-    
     HERE = pathlib.Path(__file__).parent
 
     parser = argparse.ArgumentParser()
@@ -39,13 +46,13 @@ if __name__ == "__main__":
         required=True,
         type=str,
     )
-    
+
     parser.add_argument(
         "--robot",
         choices=sorted(IK_CONFIG_DICT["fbx_offline"]),
         default="unitree_g1",
     )
-        
+
     parser.add_argument(
         "--record_video",
         action="store_true",
@@ -69,10 +76,8 @@ if __name__ == "__main__":
         default=None,
         help="Path to save the robot motion.",
     )
-    
-    
+
     args = parser.parse_args()
-    
 
     if args.save_path is not None:
         save_dir = os.path.dirname(args.save_path)
@@ -80,13 +85,11 @@ if __name__ == "__main__":
             os.makedirs(save_dir, exist_ok=True)
         qpos_list = []
 
-    
     # Load OptiTrack FMB motion trajectory
     print(f"Loading OptiTrack FBX motion file: {args.motion_file}")
     data_frames = load_optitrack_fbx_motion_file(args.motion_file)
     print(f"Loaded {len(data_frames)} frames")
-    
-    
+
     # Initialize the retargeting system with fbx configuration
     retargeter = GMR(
         src_human="fbx_offline",  # Use the new fbx configuration
@@ -98,32 +101,32 @@ if __name__ == "__main__":
     retargeter.set_ground_offset(height_offset)
 
     motion_fps = 120
-    
-    robot_motion_viewer = RobotMotionViewer(robot_type=args.robot,
-                                            motion_fps=motion_fps,
-                                            transparent_robot=1,
-                                            record_video=args.record_video,
-                                            video_path=args.video_path,
-                                            camera_follow=False,
-                                            # video_width=2080,
-                                            # video_height=1170
-                                            )
-    
+
+    robot_motion_viewer = RobotMotionViewer(
+        robot_type=args.robot,
+        motion_fps=motion_fps,
+        transparent_robot=1,
+        record_video=args.record_video,
+        video_path=args.video_path,
+        camera_follow=False,
+        # video_width=2080,
+        # video_height=1170
+    )
+
     # FPS measurement variables
     fps_counter = 0
     fps_start_time = time.time()
     fps_display_interval = 2.0  # Display FPS every 2 seconds
-    
+
     print(f"mocap_frame_rate: {motion_fps}")
-    
+
     # Create tqdm progress bar for the total number of frames
     pbar = tqdm(total=len(data_frames), desc="Retargeting OptiTrack motion")
-    
+
     # Start the viewer
     i = 0
 
     while i < len(data_frames):
-        
         # FPS measurement
         fps_counter += 1
         current_time = time.time()
@@ -132,7 +135,7 @@ if __name__ == "__main__":
             print(f"Actual rendering FPS: {actual_fps:.2f}")
             fps_counter = 0
             fps_start_time = current_time
-            
+
         # Update progress bar
         pbar.update(1)
 
@@ -159,13 +162,14 @@ if __name__ == "__main__":
 
     if args.save_path is not None:
         import pickle
+
         root_pos = np.array([qpos[:3] for qpos in qpos_list])
         # save from wxyz to xyzw
-        root_rot = np.array([qpos[3:7][[1,2,3,0]] for qpos in qpos_list])
+        root_rot = np.array([qpos[3:7][[1, 2, 3, 0]] for qpos in qpos_list])
         dof_pos = np.array([qpos[7:] for qpos in qpos_list])
         local_body_pos = None
         body_names = None
-        
+
         motion_data = {
             "fps": motion_fps,
             "root_pos": root_pos,
@@ -180,5 +184,5 @@ if __name__ == "__main__":
 
     # Close progress bar
     pbar.close()
-    
-    robot_motion_viewer.close() 
+
+    robot_motion_viewer.close()

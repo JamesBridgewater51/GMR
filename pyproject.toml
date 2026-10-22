@@ -37,7 +37,27 @@ Repository = "https://github.com/YanjieZe/GMR"
 [dependency-groups]
 dev = [
     "pytest>=9.0.3",
+    "ruff>=0.16.1",
 ]
+
+[tool.ruff]
+extend-exclude = [
+    # Vendored code keeps its upstream formatting.
+    "general_motion_retargeting/optitrack_vendor",
+    "general_motion_retargeting/utils/lafan_vendor",
+    "general_motion_retargeting/utils/xsens_vendor",
+    "third_party",
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I"]
+# Pre-existing findings excluded from the mechanical reformat; to be fixed
+# separately: unused locals (F841), bare except (E722), star import (F403).
+ignore = ["E722", "F403", "F841"]
+
+[tool.ruff.lint.per-file-ignores]
+# The package root re-exports its public API.
+"general_motion_retargeting/__init__.py" = ["F401"]
 
 [tool.setuptools.packages.find]
 include = ["general_motion_retargeting*"]
