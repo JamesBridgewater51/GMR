@@ -64,12 +64,18 @@ def load_gvhmr_pred_file(gvhmr_pred_file, smplx_body_model_path):
     # smpl_params_global['body_pose'] = smpl_params_global['body_pose'] @ rotation_matrix
     # smpl_params_global['global_orient'] = smpl_params_global['global_orient'] @ rotation_quat
     
+    # Preserve the source timing when the producer provides it.  The previous
+    # hard-coded 30 Hz silently sped up 20/25 Hz camera recordings during
+    # retargeting and made tracking unnecessarily aggressive.
+    source_fps = gvhmr_pred.get("fps", 30)
+    if torch.is_tensor(source_fps):
+        source_fps = source_fps.item()
     smplx_data = {
         'pose_body': smpl_params_global['body_pose'].numpy(),
         'betas': betas,
         'root_orient': smpl_params_global['global_orient'].numpy(),
         'trans': smpl_params_global['transl'].numpy(),
-        "mocap_frame_rate": torch.tensor(30),
+        "mocap_frame_rate": torch.tensor(float(source_fps)),
     }
 
     body_model = smplx.create(
@@ -167,6 +173,26 @@ def slerp(rot1, rot2, t):
     
     return R.from_quat(q)
 
+
+def target_sample_indices(num_frames, src_fps, tgt_fps):
+    """Source-frame coordinates sampled on an exact target-rate time grid.
+
+    The old integer ``frame_skip`` implementation turned 100->30 Hz into
+    33.33 Hz and could leave 59.99999 Hz input completely untouched.  Sampling
+    in seconds handles arbitrary and non-integer source rates without warping
+    the clip to force the final source frame into the grid.
+    """
+    src_fps = float(src_fps)
+    tgt_fps = float(tgt_fps)
+    if num_frames < 1 or src_fps <= 0 or tgt_fps <= 0:
+        raise ValueError(
+            f"invalid resampling inputs: frames={num_frames}, "
+            f"src_fps={src_fps}, tgt_fps={tgt_fps}"
+        )
+    duration = (num_frames - 1) / src_fps
+    count = int(np.floor(duration * tgt_fps + 1e-9)) + 1
+    return np.arange(count, dtype=np.float64) * (src_fps / tgt_fps)
+
 def get_smplx_data_offline_fast(smplx_data, body_model, smplx_output, tgt_fps=30):
     """
     Must return a dictionary with the following structure:
@@ -177,7 +203,6 @@ def get_smplx_data_offline_fast(smplx_data, body_model, smplx_output, tgt_fps=30
     }
     """
     src_fps = smplx_data["mocap_frame_rate"].item()
-    frame_skip = int(src_fps / tgt_fps)
     num_frames = smplx_data["pose_body"].shape[0]
     global_orient = smplx_output.global_orient.squeeze()
     full_body_pose = smplx_output.full_pose.reshape(num_frames, -1, 3)
@@ -185,13 +210,13 @@ def get_smplx_data_offline_fast(smplx_data, body_model, smplx_output, tgt_fps=30
     joint_names = JOINT_NAMES[: len(body_model.parents)]
     parents = body_model.parents
     
-    if tgt_fps < src_fps:
+    if not np.isclose(tgt_fps, src_fps):
         # perform fps alignment with proper interpolation
-        new_num_frames = num_frames // frame_skip
-        
-        # Create time points for interpolation
+        target_time = target_sample_indices(num_frames, src_fps, tgt_fps)
+        new_num_frames = len(target_time)
+
+        # Create time points for interpolation (in source-frame coordinates).
         original_time = np.arange(num_frames)
-        target_time = np.linspace(0, num_frames-1, new_num_frames)
         
         # Interpolate global orientation using SLERP
         global_orient_interp = []
@@ -232,9 +257,9 @@ def get_smplx_data_offline_fast(smplx_data, body_model, smplx_output, tgt_fps=30
                 joints_interp.append(interp_func(target_time))
         joints = np.stack(joints_interp, axis=1).reshape(new_num_frames, -1, 3)
         
-        aligned_fps = len(global_orient) / num_frames * src_fps
+        aligned_fps = float(tgt_fps)
     else:
-        aligned_fps = tgt_fps
+        aligned_fps = float(src_fps)
         
     smplx_data_frames = []
     for curr_frame in range(len(global_orient)):
@@ -270,7 +295,6 @@ def get_gvhmr_data_offline_fast(smplx_data, body_model, smplx_output, tgt_fps=30
     }
     """
     src_fps = smplx_data["mocap_frame_rate"].item()
-    frame_skip = int(src_fps / tgt_fps)
     num_frames = smplx_data["pose_body"].shape[0]
     global_orient = smplx_output.global_orient.squeeze()
     full_body_pose = smplx_output.full_pose.reshape(num_frames, -1, 3)
@@ -278,13 +302,13 @@ def get_gvhmr_data_offline_fast(smplx_data, body_model, smplx_output, tgt_fps=30
     joint_names = JOINT_NAMES[: len(body_model.parents)]
     parents = body_model.parents
     
-    if tgt_fps < src_fps:
+    if not np.isclose(tgt_fps, src_fps):
         # perform fps alignment with proper interpolation
-        new_num_frames = num_frames // frame_skip
-        
-        # Create time points for interpolation
+        target_time = target_sample_indices(num_frames, src_fps, tgt_fps)
+        new_num_frames = len(target_time)
+
+        # Create time points for interpolation (in source-frame coordinates).
         original_time = np.arange(num_frames)
-        target_time = np.linspace(0, num_frames-1, new_num_frames)
         
         # Interpolate global orientation using SLERP
         global_orient_interp = []
@@ -325,9 +349,9 @@ def get_gvhmr_data_offline_fast(smplx_data, body_model, smplx_output, tgt_fps=30
                 joints_interp.append(interp_func(target_time))
         joints = np.stack(joints_interp, axis=1).reshape(new_num_frames, -1, 3)
         
-        aligned_fps = len(global_orient) / num_frames * src_fps
+        aligned_fps = float(tgt_fps)
     else:
-        aligned_fps = tgt_fps
+        aligned_fps = float(src_fps)
         
     smplx_data_frames = []
     for curr_frame in range(len(global_orient)):
